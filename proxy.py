@@ -8,7 +8,7 @@ REQUESTS_PER_MINUTE_LIMIT = 10
 REQUESTS_PER_DAY_LIMIT = 1000
 
 # Define the cache duration in minutes
-CACHE_DURATION_MINUTES = 1
+CACHE_DURATION_MINUTES = 5
 cache = {}
 
 async def forward_request(request):
@@ -34,27 +34,40 @@ async def forward_request(request):
             return web.Response(text=response_text, content_type='application/json')
 
 def check_request_rate_limits(request):
+    # Check if it is a new day and reset rate limits if necessary
+    reset_rate_limits_if_new_day(request)
+    
     # Track requests per minute using a sliding window
     current_time = int(time.time())
-    minute_window_start_time = current_time - 60  # 60 seconds in a minute
-    minute_request_timestamps = [timestamp for timestamp in request.app['request_timestamps']
-                          if timestamp >= minute_window_start_time]
+    window_start_time = current_time - 60  # 60 seconds in a minute
+    request_timestamps = [timestamp for timestamp in request.app['request_timestamps']
+                          if timestamp >= window_start_time]
     
-    if len(minute_request_timestamps) >= REQUESTS_PER_MINUTE_LIMIT:
+    if len(request_timestamps) >= REQUESTS_PER_MINUTE_LIMIT:
         return False
     
-    day_window_start_time = current_time - 86400  # 86400 seconds in a day
-    day_request_timestamps = [timestamp for timestamp in request.app['request_timestamps']
-                          if timestamp >= day_window_start_time]
-    
-    if len(day_request_timestamps) >= REQUESTS_PER_DAY_LIMIT:
+    # Track requests per day using a counter
+    request_counter = request.app['request_counter']
+    if request_counter >= REQUESTS_PER_DAY_LIMIT:
         return False
     
     # Update the request rate tracking data
-    request.app['request_timestamps'] = day_request_timestamps
+    request.app['request_timestamps'] = request_timestamps
     request.app['request_timestamps'].append(current_time)
+    request.app['request_counter'] += 1
     print(request.app['request_timestamps'])
+    print(request.app['request_counter'])
+    
     return True
+
+def reset_rate_limits_if_new_day(request):
+    current_time = int(time.time())
+    print(f"---->{request.app['reset_time']}")
+    if current_time >= request.app['reset_time']:
+        request.app['request_timestamps'] = []
+        request.app['request_counter'] = 0
+        reset_time = (current_time // 86400 + 1) * 86400  # Next day reset time
+        request.app['reset_time'] = reset_time
 
 
 def get_cached_response(request):
@@ -80,6 +93,7 @@ def cache_response(request, response_text):
 async def start_server():
     app = web.Application()
     app['request_timestamps'] = []
+    app['request_counter'] = 0
     app['reset_time'] = 0
     app.router.add_route('*', '/{path:.*}', forward_request)
     runner = web.AppRunner(app)
