@@ -1,4 +1,3 @@
-from aiohttp import web
 from proxy_controller import forward_request
 
 def setup_routes(app):
