@@ -27,6 +27,8 @@ async def forward_request(request):
             cache_response(request, response_text, page)
             
             return web.Response(text=response_text, content_type='application/json')
+        
+        
 def get_page_number(request):
     query_params = request.query
 
