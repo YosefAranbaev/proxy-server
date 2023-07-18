@@ -11,25 +11,39 @@ REQUESTS_PER_DAY_LIMIT = 1000
 CACHE_DURATION_MINUTES = 5
 cache = {}
 
+def get_page_number(request):
+    query_params = request.query
+
+    if 'page' in query_params:
+        try:
+            page_number = int(query_params['page'])
+            return page_number
+        except ValueError:
+            raise web.HTTPBadRequest(text="Invalid page number")
+
+    raise web.HTTPBadRequest(text="Page number not specified")
+
+
 async def forward_request(request):
     # Check if the request rate exceeds the limits
     if not check_request_rate_limits(request):
         return web.Response(text='Rate limit exceeded', status=429)
-    
+    page = get_page_number(request)
     # Check if the request is already cached
-    cached_response = get_cached_response(request)
+    cached_response = get_cached_response(request, page)
     print("--->",cached_response)
     if cached_response:
         return web.Response(text=cached_response, content_type='application/json')
     
     # Forward the request to the remote server
     async with aiohttp.ClientSession() as session:
-        async with session.request(method=request.method, url='https://reqres.in/api/users?page=2') as response:
+        url = f'https://reqres.in/api/users?page={page}'
+        async with session.request(method=request.method, url=url) as response:
             assert response.status == 200
             response_text = await response.text()
             
             # Cache the response for future use
-            cache_response(request, response_text)
+            cache_response(request, response_text, page)
             
             return web.Response(text=response_text, content_type='application/json')
 

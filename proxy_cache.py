@@ -4,8 +4,8 @@ import time
 CACHE_DURATION_MINUTES = 5
 cache = {}
 
-def get_cached_response(request):
-    cache_key = request.path_qs
+def get_cached_response(request, page):
+    cache_key = f"{request.path_qs}?page={page}"
     if cache_key in cache:
         cache_entry = cache[cache_key]
         print(cache_entry['expiration_time'])
@@ -16,8 +16,8 @@ def get_cached_response(request):
     
     return None
 
-def cache_response(request, response_text):
-    cache_key = request.path_qs
+def cache_response(request, response_text, page):
+    cache_key = f"{request.path_qs}?page={page}"
     cache[cache_key] = {
         'response': response_text,
         'expiration_time': time.time() + CACHE_DURATION_MINUTES * 60
