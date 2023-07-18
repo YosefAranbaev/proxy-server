@@ -1,14 +1,11 @@
 import time
-
-# Define the cache duration in minutes
-CACHE_DURATION_MINUTES = 5
+from constants import CACHE_DURATION_MINUTES
 cache = {}
 
 def get_cached_response(request, page):
     cache_key = f"{request.path_qs}?page={page}"
     if cache_key in cache:
         cache_entry = cache[cache_key]
-        print(cache_entry['expiration_time'])
         if cache_entry['expiration_time'] >= time.time():
             return cache_entry['response']
         else:

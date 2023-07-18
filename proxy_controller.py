@@ -2,13 +2,8 @@ import aiohttp
 import time
 from aiohttp import web
 from proxy_cache import get_cached_response, cache_response
+from constants import REQUESTS_PER_MINUTE_LIMIT, REQUESTS_PER_DAY_LIMIT
 
-# Define the rate limiting parameters
-REQUESTS_PER_MINUTE_LIMIT = 10
-REQUESTS_PER_DAY_LIMIT = 1000
-
-# Define the cache duration in minutes
-CACHE_DURATION_MINUTES = 5
 cache = {}
 
 def get_page_number(request):
@@ -31,7 +26,6 @@ async def forward_request(request):
     page = get_page_number(request)
     # Check if the request is already cached
     cached_response = get_cached_response(request, page)
-    print("--->",cached_response)
     if cached_response:
         return web.Response(text=cached_response, content_type='application/json')
     
@@ -68,10 +62,7 @@ def check_request_rate_limits(request):
     # Update the request rate tracking data
     request.app['request_timestamps'] = request_timestamps
     request.app['request_timestamps'].append(current_time)
-    request.app['request_counter'] += 1
-    print(request.app['request_timestamps'])
-    print(request.app['request_counter'])
-    
+    request.app['request_counter'] += 1    
     return True
 
 def reset_rate_limits_if_new_day(request):
