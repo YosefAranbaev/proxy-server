@@ -6,19 +6,6 @@ from constants import REQUESTS_PER_MINUTE_LIMIT, REQUESTS_PER_DAY_LIMIT
 
 cache = {}
 
-def get_page_number(request):
-    query_params = request.query
-
-    if 'page' in query_params:
-        try:
-            page_number = int(query_params['page'])
-            return page_number
-        except ValueError:
-            raise web.HTTPBadRequest(text="Invalid page number")
-
-    raise web.HTTPBadRequest(text="Page number not specified")
-
-
 async def forward_request(request):
     # Check if the request rate exceeds the limits
     if not check_request_rate_limits(request):
@@ -40,6 +27,17 @@ async def forward_request(request):
             cache_response(request, response_text, page)
             
             return web.Response(text=response_text, content_type='application/json')
+def get_page_number(request):
+    query_params = request.query
+
+    if 'page' in query_params:
+        try:
+            page_number = int(query_params['page'])
+            return page_number
+        except ValueError:
+            raise web.HTTPBadRequest(text="Invalid page number")
+
+    raise web.HTTPBadRequest(text="Page number not specified")
 
 def check_request_rate_limits(request):
     # Check if it is a new day and reset rate limits if necessary
