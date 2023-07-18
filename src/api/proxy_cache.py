@@ -1,5 +1,6 @@
 import time
 from constants import CACHE_DURATION_MINUTES
+
 cache = {}
 
 def get_cached_response(request, page):

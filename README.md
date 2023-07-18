@@ -15,6 +15,6 @@ The Asynchronous Proxy Server is a Python application that forwards clients' RES
 ## How to use the server
 
 - Run "pip install -r requirements.txt" in the Terminal
-- Run "python .\proxy_server.py" in the Terminal
+- Run "python .\src\api\proxy_server.py" in the Terminal
 - Open a postman ot the browser and try yo make a get request to the server
   for example with this url: http://localhost:8080/listusers?page=2
